@@ -135,7 +135,24 @@ def autolog(
 
 
 def callback(pass_, dag, time, property_set, count):
+    """
+    Callback function for logging pass information during transpilation.
+    """
     name = pass_.__class__.__name__
-    print(
-        f"Pass {count:03d}: {name}, Time: {time:.6f}s, Depth: {dag.depth()}, Size: {dag.size()}"
+
+    ctx = _current_context.get()
+
+    if ctx is None or not isinstance(ctx, QProvRecord):
+        raise RuntimeError("No active autolog context. Please call transpile() first.")
+
+    pass_metadata = {
+        "depth": dag.depth(),
+        "size": dag.size(),
+    }
+
+    ctx.compilation.add_pass(
+        pass_name=name,
+        pass_index=count,
+        pass_duration_s=time,
+        pass_metadata=pass_metadata,
     )

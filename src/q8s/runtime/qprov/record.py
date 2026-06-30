@@ -39,6 +39,15 @@ class QuantumComputerProvenance:
 
 
 @dataclass
+class PassProvenance:
+    pass_name: str
+    pass_index: int
+    pass_type: str | None = None
+    pass_duration_s: float | None = None
+    pass_metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class CompilationProvenance:
     compiler: str = "qiskit"
     compiler_version: str | None = None
@@ -54,7 +63,28 @@ class CompilationProvenance:
     input_gate_counts: dict[str, int] = field(default_factory=dict)
     output_gate_counts: dict[str, int] = field(default_factory=dict)
     duration_s: float | None = None
+    passes: list[PassProvenance] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def add_pass(
+        self,
+        pass_name: str,
+        pass_index: int,
+        pass_type: str | None = None,
+        pass_duration_s: float | None = None,
+        pass_metadata: dict[str, Any] | None = None,
+    ):
+        if pass_metadata is None:
+            pass_metadata = {}
+        self.passes.append(
+            PassProvenance(
+                pass_name=pass_name,
+                pass_index=pass_index,
+                pass_type=pass_type,
+                pass_duration_s=pass_duration_s,
+                pass_metadata=pass_metadata,
+            )
+        )
 
 
 @dataclass_json

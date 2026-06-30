@@ -76,7 +76,7 @@ class ExecutionProvenance:
 @dataclass_json
 @dataclass
 class QProvRecord:
-    circuit: QuantumCircuitProvenance
+    circuit: QuantumCircuitProvenance | None = None
     quantum_computer: QuantumComputerProvenance | None = None
     compilation: CompilationProvenance | None = None
     execution: ExecutionProvenance | None = None

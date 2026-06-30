@@ -7,9 +7,7 @@ from typing import Any
 
 import mlflow
 from qiskit import QuantumCircuit
-import qiskit
 from qiskit.transpiler import StagedPassManager, generate_preset_pass_manager
-from qiskit.transpiler.passes import TrivialLayout
 
 from q8s.runtime.mlflow.qiskit.autologging import get_context
 
@@ -44,20 +42,10 @@ class MLflowTranspilationManager:
 
             pass_manager: StagedPassManager = generate_preset_pass_manager(
                 optimization_level=self.optimization_level,
-                # layout_method=TrivialLayout,
                 backend=self.backend,
                 basis_gates=self.basis_gates,
                 coupling_map=self.coupling_map,
             )
-
-            pass_times = {}
-
-            def callback(pass_, dag, time, property_set, count):
-                name = pass_.__class__.__name__
-                pass_times[f"{count:03d}_{name}"] = time
-                mlflow.log_metric(f"pass_time_{name}", time, step=count)
-                mlflow.log_metric(f"pass_depth_{name}", dag.depth(), step=count)
-                mlflow.log_metric(f"pass_size_{name}", dag.size(), step=count)
 
             start = time.perf_counter()
             transpiled = pass_manager.run(circuit)
@@ -139,23 +127,6 @@ class MLflowTranspilationManager:
                     indent=2,
                 )
             )
-
-            # record = QProvRecord(
-            #     circuit=QuantumCircuitProvenance(
-            #         circuit_id=str(id(original)),
-            #         name=original.name,
-            #         num_qubits=original.num_qubits,
-            #         depth=original.depth(),
-            #         width=original.width(),
-            #         size=original.size(),
-            #         gate_counts=dict(original.count_ops()),
-            #     ),
-            #     compilation=CompilationProvenance(
-            #         compiler="qiskit",
-            #         compiler_version=qiskit.version.VERSION,
-            #         optimization_level=self.optimization_level,
-            #     ),
-            # )
 
             ctx = get_context()
 

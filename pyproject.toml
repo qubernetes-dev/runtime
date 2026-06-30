@@ -1,0 +1,37 @@
+[project]
+name = "q8s.runtime"
+version = "0.1.0"
+authors = [{ name = "Vlad Stirbu", email = "vstirbu@gmail.com" }]
+description = "A runtime library for q8s workloads"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+
+dependencies = ["mlflow-skinny", "dataclasses-json"]
+
+[project.optional-dependencies]
+matplotlib = ["matplotlib"]
+
+test = ["mqt.bench", "qiskit<2.2", "mlflow", "iqm-client[qiskit]"]
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

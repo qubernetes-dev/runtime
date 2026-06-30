@@ -20,7 +20,6 @@ qc = get_benchmark(
 backend = IQMFakeAphrodite()
 
 manager = MLflowTranspilationManager(
-    tracking_uri="http://127.0.0.1:5000",
     experiment_name="qubernetes-transpilation",
     optimization_level=1,
     backend=backend,

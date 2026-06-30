@@ -14,7 +14,6 @@ from q8s.runtime.mlflow.qiskit.autologging import get_context
 
 @dataclass
 class MLflowTranspilationManager:
-    tracking_uri: str
     experiment_name: str = "qiskit-transpilation"
     optimization_level: int = 1
     backend: Any | None = None
@@ -22,7 +21,6 @@ class MLflowTranspilationManager:
     coupling_map: Any | None = None
 
     def __post_init__(self):
-        mlflow.set_tracking_uri(self.tracking_uri)
         mlflow.set_experiment(self.experiment_name)
 
     def transpile(

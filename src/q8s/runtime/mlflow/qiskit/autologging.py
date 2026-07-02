@@ -11,6 +11,10 @@ from qiskit_aer import AerSimulator
 
 from mlflow.utils.autologging_utils import autologging_integration, safe_patch
 
+from q8s.runtime.mlflow.qiskit.transpiler import (
+    find_stage_by_id,
+    process_staged_pass_manager,
+)
 from q8s.runtime.qprov.graphs import plot_transpilation_timeline
 from q8s.runtime.qprov.record import (
     CompilationProvenance,
@@ -51,7 +55,7 @@ def autolog(
     This function is idempotent and can be called multiple times. The integration will only be enabled once.
     """
 
-    def patched_run(
+    def patched_staged_pass_manager_run(
         original: StagedPassManager.run,  # type: ignore[no-untyped-def]
         instance: StagedPassManager,
         *args,
@@ -88,6 +92,10 @@ def autolog(
 
         kwargs["callback"] = callback
 
+        ctx.compilation.metadata["stages_pass_info"] = process_staged_pass_manager(
+            instance
+        )
+
         history = original(instance, *args, **kwargs)
 
         ctx.compilation.duration_s = time.perf_counter() - start
@@ -98,7 +106,7 @@ def autolog(
         "qiskit",
         qiskit.transpiler.StagedPassManager,
         "run",
-        patched_run,
+        patched_staged_pass_manager_run,
         manage_run=False,
         extra_tags=extra_tags,
     )
@@ -155,7 +163,7 @@ def autolog(
             # log result here
             try:
                 counts = result.get_counts()
-                print("counts:", counts)
+                # print("counts:", counts)
                 # mlflow.log_dict(counts, "qiskit/result_counts.json")
             except Exception:
                 pass
@@ -217,6 +225,9 @@ def callback(pass_, dag, time, property_set, count):
     pass_metadata = {
         "depth": dag.depth(),
         "size": dag.size(),
+        "stage": find_stage_by_id(
+            ctx.compilation.metadata["stages_pass_info"], id(pass_)
+        ),
     }
 
     ctx.compilation.add_pass(
@@ -224,10 +235,6 @@ def callback(pass_, dag, time, property_set, count):
         pass_index=count,
         pass_duration_s=time,
         pass_metadata=pass_metadata,
-    )
-
-    print(
-        f"Pass {count:03d}: {name}, Time: {time:.6f}s, Depth: {dag.depth()}, Size: {dag.size()}"
     )
 
 

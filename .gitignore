@@ -5,4 +5,5 @@ __pycache__/
 mlartifacts/
 mlflow.db
 
+.envrc
 out.txt

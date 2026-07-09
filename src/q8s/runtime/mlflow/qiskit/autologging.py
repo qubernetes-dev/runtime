@@ -123,23 +123,34 @@ def autolog(
             "Qiskit autologging integration is enabled for generate_preset_pass_manager."
         )
 
+        ctx = _current_context.get()
+
+        if ctx is None or not isinstance(ctx, QProvRecord):
+            raise RuntimeError(
+                "No active autolog context. Please call transpile() first."
+            )
+
+        optimization_level = kwargs.get("optimization_level", None)
+
+        if optimization_level is not None:
+            ctx.compilation.optimization_level = optimization_level
+            mlflow.log_param("optimization_level", optimization_level)
+
+        seed_transpiler = kwargs.get("seed_transpiler", None)
+
+        if seed_transpiler is not None:
+            ctx.compilation.seed_transpiler = seed_transpiler
+            mlflow.log_param("seed_transpiler", seed_transpiler)
+
         backend = kwargs.get("backend", None)
 
-        print(f"Backend: {backend.name if backend else 'None'}")
-
         if backend is not None:
-            ctx = _current_context.get()
-
-            if ctx is None or not isinstance(ctx, QProvRecord):
-                raise RuntimeError(
-                    "No active autolog context. Please call transpile() first."
-                )
-
             ctx.quantum_computer = QuantumComputerProvenance(
                 provider="IQM",
                 backend_name=backend.name,
                 num_qubits=getattr(backend, "num_qubits", None),
             )
+            mlflow.log_param("backend_name", backend.name)
 
         return original(*args, **kwargs)
 
@@ -257,5 +268,23 @@ def log_to_mlflow(record: QProvRecord):
         run = mlflow.active_run()
         if run is None:
             raise RuntimeError("No active MLflow run. Please start a run first.")
+
+        ctx = _current_context.get()
+
+        if ctx is None or not isinstance(ctx, QProvRecord):
+            raise RuntimeError(
+                "No active autolog context. Please call transpile() first."
+            )
+
+        passes = sorted(ctx.compilation.passes, key=lambda p: p.pass_index)
+
+        mlflow.log_metric("passes_count", len(passes))
+        mlflow.log_metric("transpilation_duration", ctx.compilation.duration_s)
+        mlflow.log_metric(
+            "circuit_depth", passes[-1].pass_metadata.get("depth", 0) if passes else 0
+        )
+        mlflow.log_metric(
+            "circuit_size", passes[-1].pass_metadata.get("size", 0) if passes else 0
+        )
 
         mlflow.log_artifacts(tmp)

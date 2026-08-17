@@ -63,7 +63,7 @@ class TestAutolog(unittest.TestCase):
         with patch.object(autologging, "safe_patch") as safe_patch:
             autologging.autolog(disable=False)
 
-        safe_patch.assert_called_once()
+        self.assertEqual(safe_patch.call_count, 2)
 
     def test_patch_records_circuit_and_compilation_duration(self):
 

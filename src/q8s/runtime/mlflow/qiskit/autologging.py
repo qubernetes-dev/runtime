@@ -272,17 +272,10 @@ def log_to_mlflow(record: QProvRecord):
         if run is None:
             raise RuntimeError("No active MLflow run. Please start a run first.")
 
-        ctx = _current_context.get()
-
-        if ctx is None or not isinstance(ctx, QProvRecord):
-            raise RuntimeError(
-                "No active autolog context. Please call transpile() first."
-            )
-
-        passes = sorted(ctx.compilation.passes, key=lambda p: p.pass_index)
+        passes = sorted(record.compilation.passes, key=lambda p: p.pass_index)
 
         mlflow.log_metric("passes_count", len(passes))
-        mlflow.log_metric("transpilation_duration", ctx.compilation.duration_s)
+        mlflow.log_metric("transpilation_duration", record.compilation.duration_s)
         mlflow.log_metric(
             "circuit_depth", passes[-1].pass_metadata.get("depth", 0) if passes else 0
         )

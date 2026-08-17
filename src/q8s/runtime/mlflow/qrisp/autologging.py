@@ -2,9 +2,11 @@ import contextvars
 import time
 from importlib.metadata import version
 
+from mlflow import ActiveRun
 from mlflow.utils.autologging_utils import autologging_integration, safe_patch
 from qrisp import PassManager, QuantumCircuit
 
+from q8s.runtime.mlflow.qiskit.autologging import log_to_mlflow
 from q8s.runtime.qprov.record import (
     CompilationProvenance,
     QProvRecord,
@@ -35,6 +37,9 @@ def autolog(
     silent=False,
 ) -> None:
     """Enables autologging for QRISPs."""
+
+    if disable:
+        return
 
     def patched_pass_manager_run(
         original,  # type: ignore[no-untyped-def]
@@ -87,11 +92,29 @@ def autolog(
 
         ctx.compilation.duration_s = end - start
 
-        print(ctx.to_json(indent=2))
-
         return result
 
-    if disable:
-        return
-
     safe_patch("qrisp", PassManager, "run", patched_pass_manager_run)
+
+    def patched_activerun_exit(original, *args, **kwargs):
+        """Patch the __exit__ method of ActiveRun to log the QProvRecord to MLflow when
+        the run ends."""
+        ctx = _current_context.get()
+
+        if ctx is None or not isinstance(ctx, QProvRecord):
+            raise RuntimeError(
+                "No active autolog context. Please call transpile() first."
+            )
+
+        log_to_mlflow(ctx)
+
+        return original(*args, **kwargs)
+
+    safe_patch(
+        "qrisp",
+        ActiveRun,
+        "__exit__",
+        patched_activerun_exit,
+        manage_run=False,
+        # extra_tags=extra_tags,
+    )

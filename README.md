@@ -187,37 +187,3 @@ See the QProv publication for the complete provenance model and definitions.
 ## License
 
 `q8s.runtime` is licensed under the Apache License 2.0.
-
-## Provenance
-
-### Quantum Computer
-
-Quantum Computer provenance describes the characteristics of the quantum computer on which a circuit is executed.
-
-| QProv   | Provenance attribute      | Qiskit | Qrisp |
-| ------- | ------------------------- | :----: | :---: |
-| **QC1** | Number of qubits          |   ✓    |   ✓   |
-| **QC2** | Decoherence times (T1/T2) |   ◐    |   ◐   |
-| **QC3** | Qubit connectivity        |   ✓    |   ✓   |
-| **QC4** | Gate set                  |   ✓    |   ✓   |
-| **QC5** | Gate fidelities           |   ◐    |   ◐   |
-| **QC6** | Gate times                |   ◐    |   ◐   |
-| **QC7** | Readout fidelities        |   ◐    |   ◐   |
-
-The availability of hardware properties depends on the selected backend and provider. In particular, calibration information such as decoherence times, gate fidelities, and readout fidelities may not be exposed by every backend.
-
-### Execution
-
-Execution provenance captures information generated when a compiled quantum circuit is executed.
-
-| QProv  | Provenance attribute     | Qiskit | Qrisp |
-| ------ | ------------------------ | :----: | :---: |
-| **E1** | Input data               |   ✓    |   ✓   |
-| **E2** | Output data              |   ✓    |   ✓   |
-| **E3** | Number of shots          |   ✓    |   ✓   |
-| **E4** | Intermediate results     |   ◐    |   ◐   |
-| **E5** | Number of iterations     |   ◐    |   ◐   |
-| **E6** | Execution time           |   ✓    |   ✓   |
-| **E7** | Readout-error mitigation |   ◐    |   ◐   |
-
-Intermediate results and iteration counts are particularly relevant for hybrid and variational quantum algorithms and are available when exposed by the application or QDK.

@@ -31,7 +31,7 @@ matplotlib = ["matplotlib"]
 
 development = ["pre-commit", "pytest", "pytest-cov"]
 
-qiskit = ["qiskit"]
+qiskit = ["qiskit", "qiskit-aer"]
 qrisp = ["qrisp"]
 
 test = ["mqt.bench", "qiskit<2.2", "mlflow", "iqm-client[qiskit]"]

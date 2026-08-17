@@ -77,11 +77,39 @@ The integration can capture information about the transpilation process, includi
 The Qrisp integration converts Qrisp programs into the common `q8s.runtime` representation, allowing provenance and experiment information produced by Qrisp workflows to be handled using the same model as Qiskit workflows.
 
 ```python
-# Qrisp program
-...
+import mlflow
 
-# Convert/import into the q8s.runtime representation
-...
+from q8s.runtime.mlflow.qrisp import autolog
+
+autolog()
+
+from qrisp import (
+    PassManager,
+    QuantumCircuit,
+    combine_single_qubit_gates,
+    commute_swaps,
+    fuse_adjacents,
+)
+
+from q8s.runtime.mlflow.qrisp.autologging import get_context
+from q8s.runtime.qprov.graphs import plot_transpilation_timeline
+
+mlflow.set_experiment("qrisp-transpilation")
+
+with mlflow.start_run():
+
+    qc = QuantumCircuit(2)
+    qc.cx(0, 1)
+    qc.cx(0, 1)  # Self-inverse — will be cancelled
+    qc.h(0)
+    qc.h(0)  # Another self-inverse pair
+
+    pm = PassManager()
+    pm += fuse_adjacents
+    pm += commute_swaps
+    pm += combine_single_qubit_gates
+
+    optimized_qc = pm.run(qc)
 ```
 
 ## Capabilities
@@ -159,3 +187,37 @@ See the QProv publication for the complete provenance model and definitions.
 ## License
 
 `q8s.runtime` is licensed under the Apache License 2.0.
+
+## Provenance
+
+### Quantum Computer
+
+Quantum Computer provenance describes the characteristics of the quantum computer on which a circuit is executed.
+
+| QProv   | Provenance attribute      | Qiskit | Qrisp |
+| ------- | ------------------------- | :----: | :---: |
+| **QC1** | Number of qubits          |   ✓    |   ✓   |
+| **QC2** | Decoherence times (T1/T2) |   ◐    |   ◐   |
+| **QC3** | Qubit connectivity        |   ✓    |   ✓   |
+| **QC4** | Gate set                  |   ✓    |   ✓   |
+| **QC5** | Gate fidelities           |   ◐    |   ◐   |
+| **QC6** | Gate times                |   ◐    |   ◐   |
+| **QC7** | Readout fidelities        |   ◐    |   ◐   |
+
+The availability of hardware properties depends on the selected backend and provider. In particular, calibration information such as decoherence times, gate fidelities, and readout fidelities may not be exposed by every backend.
+
+### Execution
+
+Execution provenance captures information generated when a compiled quantum circuit is executed.
+
+| QProv  | Provenance attribute     | Qiskit | Qrisp |
+| ------ | ------------------------ | :----: | :---: |
+| **E1** | Input data               |   ✓    |   ✓   |
+| **E2** | Output data              |   ✓    |   ✓   |
+| **E3** | Number of shots          |   ✓    |   ✓   |
+| **E4** | Intermediate results     |   ◐    |   ◐   |
+| **E5** | Number of iterations     |   ◐    |   ◐   |
+| **E6** | Execution time           |   ✓    |   ✓   |
+| **E7** | Readout-error mitigation |   ◐    |   ◐   |
+
+Intermediate results and iteration counts are particularly relevant for hybrid and variational quantum algorithms and are available when exposed by the application or QDK.

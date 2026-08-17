@@ -6,40 +6,51 @@ from q8s.runtime.mlflow.qrisp import autolog
 
 autolog()
 
+from iqm.qiskit_iqm.fake_backends.fake_aphrodite import IQMFakeAphrodite
+from iqm.qrisp_iqm import create_iqm_pass_manager
 from qrisp import (
-    PassManager,
+    Clbit,
     QuantumCircuit,
-    combine_single_qubit_gates,
-    commute_swaps,
-    fuse_adjacents,
+    Qubit,
 )
 
-from q8s.runtime.mlflow.qrisp.autologging import get_context
-from q8s.runtime.qprov.graphs import plot_transpilation_timeline
+
+def build_demo_circuit() -> QuantumCircuit:
+    """Build a small demo circuit with 2-qubit interactions.
+
+    https://docs.iqm.tech/iqm-client/user_guide_qrisp/plasma_sabre_tutorial.html#demo-circuit.
+    """
+    qc = QuantumCircuit()
+
+    # Give logical qubits distinctive names
+    for i in range(4):
+        qc.add_qubit(Qubit("original_qb_" + str(i)))
+
+    for i in range(4):
+        qc.add_clbit(Clbit("c" + str(i)))
+
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.ry(0.7, 2)
+    qc.cz(1, 2)
+    qc.cx(2, 3)
+    qc.s(1)
+    qc.cy(0, 2)
+
+    # Add measurements for execution workflows
+    qc.measure(qc.qubits, qc.clbits)
+    return qc
+
 
 mlflow.set_experiment("qrisp-transpilation")
 
+backend = IQMFakeAphrodite()
+
+connectivity = backend.target.build_coupling_map()
+
 with mlflow.start_run():
+    qc = build_demo_circuit()
 
-    qc = QuantumCircuit(2)
-    qc.cx(0, 1)
-    qc.cx(0, 1)  # Self-inverse — will be cancelled
-    qc.h(0)
-    qc.h(0)  # Another self-inverse pair
-
-    # print("Before:", qc, sep="\n")
-
-    pm = PassManager()
-    pm += fuse_adjacents
-    pm += commute_swaps
-    pm += combine_single_qubit_gates
+    pm = create_iqm_pass_manager(connectivity=connectivity)
 
     optimized_qc = pm.run(qc)
-    # print("After:", optimized_qc, sep="\n")
-
-    # fig = plot_transpilation_timeline(
-    #     passes=get_context().compilation.passes,
-    #     figsize=(16, 8),
-    # )
-
-    # fig.savefig("transpilation_timeline.png", dpi=300, bbox_inches="tight")

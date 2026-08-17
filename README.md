@@ -141,7 +141,7 @@ Quantum Circuit provenance describes the structure and characteristics of the qu
 | **Q4** | Circuit width        |   ✓    |   ✓   |
 | **Q5** | Circuit depth        |   ✓    |   ✓   |
 | **Q6** | Circuit size         |   ✓    |   ✓   |
-| **Q7** | Encoding             |   —    |   —   |
+| **Q7** | Encoding             |   -    |   -   |
 
 Circuit width represents the number of qubits used by the circuit, circuit depth describes the number of sequential operations required by the circuit, and circuit size describes its number of operations.
 

@@ -3,13 +3,13 @@ import tempfile
 import time
 from pathlib import Path
 
-from mlflow.tracking.fluent import ActiveRun
+import mlflow
 import qiskit
+from mlflow.tracking.fluent import ActiveRun
+from mlflow.utils.autologging_utils import autologging_integration, safe_patch
 from qiskit.circuit import QuantumCircuit
 from qiskit.transpiler import StagedPassManager
 from qiskit_aer import AerSimulator
-
-from mlflow.utils.autologging_utils import autologging_integration, safe_patch
 
 from q8s.runtime.mlflow.qiskit.transpiler import (
     find_stage_by_id,
@@ -49,10 +49,10 @@ def autolog(
     silent=False,
     extra_tags=None,
 ) -> None:
-    """
-    Enables the Qiskit autologging integration.
+    """Enables the Qiskit autologging integration.
 
-    This function is idempotent and can be called multiple times. The integration will only be enabled once.
+    This function is idempotent and can be called multiple times. The integration will
+    only be enabled once.
     """
 
     def patched_staged_pass_manager_run(
@@ -116,12 +116,21 @@ def autolog(
         *args,
         **kwargs,
     ):
-        """
-        Patch the generate_preset_pass_manager function to log the backend information to the QProvRecord.
-        """
+        """Patch the generate_preset_pass_manager function to log the backend
+        information to the QProvRecord."""
+
         print(
             "Qiskit autologging integration is enabled for generate_preset_pass_manager."
         )
+
+        run = mlflow.active_run()
+
+        if run is None:
+            # noqa: E501
+            raise RuntimeError(
+                """No active MLflow run. `generate_preset_pass_manager` must be
+                called within an active MLflow run."""
+            )
 
         ctx = _current_context.get()
 
@@ -173,7 +182,7 @@ def autolog(
 
             # log result here
             try:
-                counts = result.get_counts()
+                result.get_counts()
                 # print("counts:", counts)
                 # mlflow.log_dict(counts, "qiskit/result_counts.json")
             except Exception:
@@ -198,9 +207,8 @@ def autolog(
     )
 
     def patched_activerun_exit(original, *args, **kwargs):
-        """
-        Patch the __exit__ method of ActiveRun to log the QProvRecord to MLflow when the run ends.
-        """
+        """Patch the __exit__ method of ActiveRun to log the QProvRecord to MLflow when
+        the run ends."""
         ctx = _current_context.get()
 
         if ctx is None or not isinstance(ctx, QProvRecord):
@@ -223,9 +231,7 @@ def autolog(
 
 
 def callback(pass_, dag, time, property_set, count):
-    """
-    Callback function for logging pass information during transpilation.
-    """
+    """Callback function for logging pass information during transpilation."""
     name = pass_.__class__.__name__
 
     ctx = _current_context.get()
@@ -250,10 +256,7 @@ def callback(pass_, dag, time, property_set, count):
 
 
 def log_to_mlflow(record: QProvRecord):
-    """
-    Logs the QProvRecord to MLflow.
-    """
-    import mlflow
+    """Logs the QProvRecord to MLflow."""
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)

@@ -1,5 +1,8 @@
+# flake8: noqa: E402
+
 import mlflow
 from mqt.bench import BenchmarkLevel, get_benchmark
+
 from q8s.runtime.mlflow.qiskit import autolog
 
 autolog()
@@ -17,12 +20,12 @@ qc = get_benchmark(
 
 backend = IQMFakeAphrodite()
 
-manager = generate_preset_pass_manager(
-    optimization_level=3,
-    backend=backend,
-)
 
 with mlflow.start_run():
+    manager = generate_preset_pass_manager(
+        optimization_level=3,
+        backend=backend,
+    )
 
     tqc = manager.run(qc)
 

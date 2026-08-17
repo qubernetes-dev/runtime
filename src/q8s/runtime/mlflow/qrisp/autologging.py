@@ -38,7 +38,7 @@ def autolog(
 
     def patched_pass_manager_run(
         original,  # type: ignore[no-untyped-def]
-        instance,
+        instance: PassManager,
         *args,
         **kwargs,
     ):
@@ -59,22 +59,37 @@ def autolog(
             gate_counts=circuit.count_ops(),
         )
 
-        for circuit_pass in instance._passes:
-            print(
-                f"Executing pass: {circuit_pass.__name__} with args: {args}, kwargs: {kwargs} "
-            )
+        result: QuantumCircuit = circuit
 
         start = time.perf_counter()
 
-        history = original(instance, *args, **kwargs)
+        # history = original(instance, *args, **kwargs)
 
         end = time.perf_counter()
+
+        for index, circuit_pass in enumerate(instance._passes):
+            pass_start = time.perf_counter()
+
+            result = circuit_pass(result)
+
+            pass_end = time.perf_counter()
+
+            ctx.compilation.add_pass(
+                pass_name=circuit_pass.__name__,
+                pass_index=index,
+                pass_duration_s=pass_end - pass_start,
+                pass_metadata={
+                    "depth": result.depth(),
+                    "size": sum(result.count_ops().values()),
+                    "width": len(result.qubits),
+                },
+            )
 
         ctx.compilation.duration_s = end - start
 
         print(ctx.to_json(indent=2))
 
-        return history
+        return result
 
     if disable:
         return

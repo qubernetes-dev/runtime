@@ -9,6 +9,8 @@ from qrisp import (
 )
 
 from q8s.runtime.mlflow.qrisp import autolog
+from q8s.runtime.mlflow.qrisp.autologging import get_context
+from q8s.runtime.qprov.graphs import plot_transpilation_timeline
 
 autolog()
 
@@ -27,3 +29,10 @@ pm += combine_single_qubit_gates
 
 optimized_qc = pm.run(qc)
 print("After:", optimized_qc, sep="\n")
+
+fig = plot_transpilation_timeline(
+    passes=get_context().compilation.passes,
+    figsize=(16, 8),
+)
+
+fig.savefig("transpilation_timeline.png", dpi=300, bbox_inches="tight")

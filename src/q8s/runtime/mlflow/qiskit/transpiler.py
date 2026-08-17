@@ -1,9 +1,25 @@
+# Copyright 2026 Qubernetes Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+from qiskit.passmanager import FlowControllerLinear, GenericPass
 from qiskit.transpiler import (
     ConditionalController,
     DoWhileController,
     StagedPassManager,
 )
-from qiskit.passmanager import FlowControllerLinear, GenericPass
 
 
 def process_pass(
@@ -12,13 +28,15 @@ def process_pass(
     ),
     stage_info: list[int],
 ):
-    """
-    Recursively process a pass or controller and collect the IDs of all passes in the stage_info list.
+    """Recursively process a pass or controller and collect the IDs of all passes in the
+    stage_info list.
+
     Args:
         task: The pass or controller to process.
         stage_info: A list to collect the IDs of all passes.
     Returns:
-        The updated stage_info list containing the IDs of all passes."""
+        The updated stage_info list containing the IDs of all passes.
+    """
     if (
         isinstance(task, ConditionalController)
         or isinstance(task, DoWhileController)
@@ -36,8 +54,9 @@ def process_pass(
 
 
 def process_staged_pass_manager(manager: StagedPassManager) -> dict[str, list[int]]:
-    """
-    Process a StagedPassManager and return a dictionary containing the stage names and their corresponding pass IDs.
+    """Process a StagedPassManager and return a dictionary containing the stage names
+    and their corresponding pass IDs.
+
     Args:
         manager (StagedPassManager): The StagedPassManager to process.
     Returns:
@@ -56,8 +75,8 @@ def process_staged_pass_manager(manager: StagedPassManager) -> dict[str, list[in
 
 
 def find_stage_by_id(stage_pass_info: dict[str, list[int]], pass_id: int) -> str | None:
-    """
-    Find the stage name corresponding to a given pass ID in the staged pass manager.
+    """Find the stage name corresponding to a given pass ID in the staged pass manager.
+
     Args:
         stage_pass_info (dict): A dictionary mapping stage names to lists of pass IDs.
         pass_id (int): The ID of the pass to find.

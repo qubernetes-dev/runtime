@@ -13,7 +13,8 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
+"""MLflow autologging integration for Qrisp."""
 
-from importlib.metadata import version
+from q8s.runtime.mlflow.qrisp.autologging import autolog
 
-__version__ = version("q8s.runtime")
+__all__ = ["autolog"]

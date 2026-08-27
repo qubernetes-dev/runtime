@@ -1,6 +1,22 @@
+# Copyright 2026 Qubernetes Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -106,6 +122,27 @@ class ExecutionProvenance:
 @dataclass_json
 @dataclass
 class QProvRecord:
+    """A record of the provenance of a quantum circuit execution, including information
+    about the circuit, the quantum computer, the compilation process, and the execution
+    results.
+
+    Attributes:
+        circuit : QuantumCircuitProvenance | None
+            The provenance information of the quantum circuit.
+        quantum_computer : QuantumComputerProvenance | None
+            The provenance information of the quantum computer used for execution.
+        compilation : CompilationProvenance | None
+            The provenance information of the compilation process.
+        execution : ExecutionProvenance | None
+            The provenance information of the execution results.
+        created_at : datetime
+            The timestamp when the record was created.
+        record_id : str
+            A unique identifier for the record.
+        metadata : dict[str, Any]
+            Additional metadata associated with the record.
+    """
+
     circuit: QuantumCircuitProvenance | None = None
     quantum_computer: QuantumComputerProvenance | None = None
     compilation: CompilationProvenance | None = None

@@ -1,6 +1,6 @@
 [project]
 name = "q8s.runtime"
-version = "0.1.0"
+version = "0.2.0"
 authors = [{ name = "Vlad Stirbu", email = "vstirbu@gmail.com" }]
 description = "A runtime library for q8s workloads"
 readme = "README.md"

@@ -17,4 +17,4 @@
 
 from q8s.runtime.mlflow.qiskit.utils import create_autolog
 
-autolog = create_autolog()
+autolog = create_autolog(integration_name="qiskit")

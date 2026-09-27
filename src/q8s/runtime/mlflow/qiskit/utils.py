@@ -45,24 +45,6 @@ from q8s.runtime.qprov.record import (
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-CONTEXT_NAME = "qiskit_mlflow_autologging_context"
-
-_current_context: contextvars.ContextVar[QProvRecord] = contextvars.ContextVar(
-    CONTEXT_NAME,
-    default=QProvRecord(
-        compilation=CompilationProvenance(
-            compiler="qiskit", compiler_version=version("qiskit")
-        )
-    ),
-)
-
-
-def get_context() -> QProvRecord:
-    ctx = _current_context.get()
-    if ctx is None:
-        raise RuntimeError("No active autolog context")
-    return ctx
-
 
 def create_autolog(integration_name: str = "qiskit") -> Callable[..., None]:
 
@@ -79,16 +61,41 @@ def create_autolog(integration_name: str = "qiskit") -> Callable[..., None]:
         will only be enabled once.
         """
 
-        _patch_qiskit(disable=disable, silent=silent, extra_tags=extra_tags)
+        _patch_qiskit(
+            integration_name=integration_name,
+            disable=disable,
+            silent=silent,
+            extra_tags=extra_tags,
+        )
 
     return autolog
 
 
 def _patch_qiskit(
+    integration_name: str,
     disable=False,
     silent=False,
     extra_tags=None,
 ):
+    CONTEXT_NAME = integration_name + "_mlflow_autologging_context"
+
+    _current_context: contextvars.ContextVar[QProvRecord] = contextvars.ContextVar(
+        CONTEXT_NAME,
+        default=QProvRecord(
+            compilation=CompilationProvenance(
+                compiler=integration_name, compiler_version=version(integration_name)
+            )
+        ),
+    )
+
+    print("Patched")
+
+    def get_context() -> QProvRecord:
+        ctx = _current_context.get()
+        if ctx is None:
+            raise RuntimeError("No active autolog context")
+        return ctx
+
     def patched_staged_pass_manager_run(
         original: StagedPassManager.run,  # type: ignore[no-untyped-def]
         instance: StagedPassManager,
@@ -137,7 +144,7 @@ def _patch_qiskit(
         return history
 
     safe_patch(
-        "qiskit",
+        integration_name,
         qiskit.transpiler.StagedPassManager,
         "run",
         patched_staged_pass_manager_run,
@@ -200,7 +207,7 @@ def _patch_qiskit(
         return original(*args, **kwargs)
 
     safe_patch(
-        "qiskit",
+        integration_name,
         qiskit.transpiler,
         "generate_preset_pass_manager",
         patched_generate_preset_pass_manager,
@@ -238,7 +245,7 @@ def _patch_qiskit(
         return job
 
     safe_patch(
-        "qiskit",
+        integration_name,
         AerSimulator,
         "run",
         patched_backend_run,
@@ -259,7 +266,7 @@ def _patch_qiskit(
         return original(*args, **kwargs)
 
     safe_patch(
-        "qiskit",
+        integration_name,
         ActiveRun,
         "__exit__",
         patched_activerun_exit,
@@ -267,30 +274,31 @@ def _patch_qiskit(
         extra_tags=extra_tags,
     )
 
+    def callback(pass_, dag, time, property_set, count):
+        """Callback function for logging pass information during transpilation."""
+        name = pass_.__class__.__name__
 
-def callback(pass_, dag, time, property_set, count):
-    """Callback function for logging pass information during transpilation."""
-    name = pass_.__class__.__name__
+        ctx = _current_context.get()
 
-    ctx = _current_context.get()
+        if ctx is None or not isinstance(ctx, QProvRecord):
+            raise RuntimeError(
+                "No active autolog context. Please call transpile() first."
+            )
 
-    if ctx is None or not isinstance(ctx, QProvRecord):
-        raise RuntimeError("No active autolog context. Please call transpile() first.")
+        pass_metadata = {
+            "depth": dag.depth(),
+            "size": dag.size(),
+            "stage": find_stage_by_id(
+                ctx.compilation.metadata["stages_pass_info"], id(pass_)
+            ),
+        }
 
-    pass_metadata = {
-        "depth": dag.depth(),
-        "size": dag.size(),
-        "stage": find_stage_by_id(
-            ctx.compilation.metadata["stages_pass_info"], id(pass_)
-        ),
-    }
-
-    ctx.compilation.add_pass(
-        pass_name=name,
-        pass_index=count,
-        pass_duration_s=time,
-        pass_metadata=pass_metadata,
-    )
+        ctx.compilation.add_pass(
+            pass_name=name,
+            pass_index=count,
+            pass_duration_s=time,
+            pass_metadata=pass_metadata,
+        )
 
 
 def log_to_mlflow(record: QProvRecord):
@@ -315,7 +323,8 @@ def log_to_mlflow(record: QProvRecord):
         mlflow.log_metric("passes_count", len(passes))
         mlflow.log_metric("transpilation_duration", record.compilation.duration_s)
         mlflow.log_metric(
-            "circuit_depth", passes[-1].pass_metadata.get("depth", 0) if passes else 0
+            "circuit_depth",
+            passes[-1].pass_metadata.get("depth", 0) if passes else 0,
         )
         mlflow.log_metric(
             "circuit_size", passes[-1].pass_metadata.get("size", 0) if passes else 0

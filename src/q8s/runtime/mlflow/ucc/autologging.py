@@ -14,40 +14,37 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import contextvars
-from importlib.metadata import version
 
-from mlflow.utils.autologging_utils import autologging_integration
+from q8s.runtime.mlflow.qiskit.autologging import create_autolog
 
-from q8s.runtime.mlflow.qiskit.autologging import autolog as qiskit_autolog
-from q8s.runtime.qprov.record import CompilationProvenance, QProvRecord
-
-CONTEXT_NAME = "ucc_mlflow_autologging_context"
-_current_context: contextvars.ContextVar[QProvRecord] = contextvars.ContextVar(
-    CONTEXT_NAME,
-    default=QProvRecord(
-        compilation=CompilationProvenance(
-            compiler="ucc", compiler_version=version("ucc")
-        )
-    ),
-)
+# CONTEXT_NAME = "ucc_mlflow_autologging_context"
+# _current_context: contextvars.ContextVar[QProvRecord] = contextvars.ContextVar(
+#     CONTEXT_NAME,
+#     default=QProvRecord(
+#         compilation=CompilationProvenance(
+#             compiler="ucc", compiler_version=version("ucc")
+#         )
+#     ),
+# )
 
 
-def get_context() -> QProvRecord:
-    ctx = _current_context.get()
-    if ctx is None:
-        raise RuntimeError("No active autolog context")
-    return ctx
+# def get_context() -> QProvRecord:
+#     ctx = _current_context.get()
+#     if ctx is None:
+#         raise RuntimeError("No active autolog context")
+#     return ctx
 
 
-@autologging_integration("ucc")
-def autolog(
-    disable=False,
-    silent=False,
-) -> None:
-    """Enables autologging for ucc."""
+# @autologging_integration("ucc")
+# def autolog(
+#     disable=False,
+#     silent=False,
+# ) -> None:
+#     """Enables autologging for ucc."""
 
-    if disable:
-        return
+#     if disable:
+#         return
 
-    qiskit_autolog()
+#     qiskit_autolog(integration_name="ucc")
+
+autolog = create_autolog(integration_name="ucc")

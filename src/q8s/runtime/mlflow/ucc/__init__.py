@@ -13,8 +13,8 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
+"""MLflow integration for ucc."""
 
+from .autologging import autolog
 
-from q8s.runtime.mlflow.qiskit.utils import create_autolog
-
-autolog = create_autolog(integration_name="qiskit")
+__all__ = ["autolog"]

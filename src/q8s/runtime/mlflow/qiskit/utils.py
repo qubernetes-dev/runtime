@@ -88,8 +88,6 @@ def _patch_qiskit(
         ),
     )
 
-    print("Patched")
-
     def get_context() -> QProvRecord:
         ctx = _current_context.get()
         if ctx is None:
@@ -105,7 +103,9 @@ def _patch_qiskit(
         if disable:
             return original(*args, **kwargs)
 
-        print("Qiskit autologging integration is enabled for StagedPassManager.run.")
+        logger.info(
+            "Qiskit autologging integration is enabled for StagedPassManager.run."
+        )
 
         start = time.perf_counter()
 
@@ -129,7 +129,7 @@ def _patch_qiskit(
             )
 
         if not silent:
-            print("Logging Qiskit transpilation run to MLflow.")
+            logger.info("Logging Qiskit transpilation run to MLflow.")
 
         kwargs["callback"] = callback
 
@@ -162,7 +162,7 @@ def _patch_qiskit(
         """Patch the generate_preset_pass_manager function to log the backend
         information to the QProvRecord."""
 
-        print(
+        logger.info(
             "Qiskit autologging integration is enabled for generate_preset_pass_manager."
         )
 

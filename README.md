@@ -2,7 +2,7 @@
 
 `q8s.runtime` provides common runtime, provenance, and experiment-tracking capabilities for quantum software.
 
-The library provides a QDK-independent representation of quantum programs and their execution metadata, together with integrations for quantum development kits such as [Qiskit](https://www.ibm.com/quantum/qiskit) and [Qrisp](https://www.qrisp.eu/index.html). This makes it possible to collect and analyse execution and compilation information consistently across different quantum software stacks.
+The library provides a QDK-independent representation of quantum programs and their execution metadata, together with integrations for quantum development kits such as [Qiskit](https://www.ibm.com/quantum/qiskit), [UCC](https://ucc.readthedocs.io/en/latest/) and [Qrisp](https://www.qrisp.eu/index.html). This makes it possible to collect and analyse execution and compilation information consistently across different quantum software stacks.
 
 ## Installation
 
@@ -17,12 +17,13 @@ Support for individual quantum development kits can be installed using the corre
 ```bash
 pip install "q8s.runtime[qiskit]"
 pip install "q8s.runtime[qrisp]"
+pip install "q8s.runtime[ucc]"
 ```
 
 Multiple integrations can be installed together:
 
 ```bash
-pip install "q8s.runtime[qiskit,qrisp]"
+pip install "q8s.runtime[qiskit,qrisp,ucc]"
 ```
 
 ## Integrations
@@ -112,6 +113,32 @@ with mlflow.start_run():
     optimized_qc = pm.run(qc)
 ```
 
+### UCC
+
+The UCC integration tracks the underlying Qiskit transpilation stages used by UCC through MLflow.
+
+Enable autologging before importing UCC's `compile` function, then compile within an active MLflow run:
+
+```python
+import mlflow
+
+from q8s.runtime.mlflow.ucc import autolog
+
+autolog()
+
+from qiskit import QuantumCircuit
+from ucc import compile
+
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+
+mlflow.set_experiment("ucc-compilation")
+
+with mlflow.start_run():
+    result = compile(qc)
+```
+
 ## Capabilities
 
 ### Provenance
@@ -120,14 +147,16 @@ with mlflow.start_run():
 
 QProv organizes provenance information into four main categories:
 
-| QProv category       | Description                                                       | Qiskit | Qrisp |
-| -------------------- | ----------------------------------------------------------------- | :----: | :---: |
-| **Quantum Circuit**  | Structure and characteristics of the quantum circuit              |   ◐    |   ◐   |
-| **Quantum Computer** | Characteristics of the quantum computer or execution backend      |   -    |   -   |
-| **Compilation**      | Transformation of a quantum circuit for a target quantum computer |   ◐    |   ◐   |
-| **Execution**        | Information associated with executing the compiled circuit        |   -    |   -   |
+| QProv category       | Description                                                       | Qiskit | Qrisp | UCC |
+| -------------------- | ----------------------------------------------------------------- | :----: | :---: | :-: |
+| **Quantum Circuit**  | Structure and characteristics of the quantum circuit              |   ◐    |   ◐   |  ◐  |
+| **Quantum Computer** | Characteristics of the quantum computer or execution backend      |   -    |   -   |  -  |
+| **Compilation**      | Transformation of a quantum circuit for a target quantum computer |   ◐    |   ◐   |  ◐  |
+| **Execution**        | Information associated with executing the compiled circuit        |   -    |   -   |  -  |
 
 The availability of individual provenance attributes depends on the QDK, backend, provider, and application.
+
+UCC collects circuit and pass metadata through the Qiskit instrumentation described above. The detailed tables below describe the direct Qiskit and Qrisp integrations.
 
 ### Quantum Circuit
 
@@ -149,26 +178,26 @@ Circuit width represents the number of qubits used by the circuit, circuit depth
 
 Compilation provenance describes how an abstract quantum circuit is transformed into a circuit that can be executed by a particular quantum computer.
 
-| QProv  | Provenance attribute | Qiskit | Qrisp |
-| ------ | -------------------- | :----: | :---: |
-| **C1** | Qubit assignments    |   ✓    |   ✓   |
-| **C2** | Gate mappings        |   ✓    |   ✓   |
-| **C3** | Optimisation goal    |   ✓    |   -   |
-| **C4** | Random seed          |   ✓    |   -   |
-| **C5** | Compilation time     |   ✓    |   ✓   |
+| QProv  | Provenance attribute | Qiskit/UCC | Qrisp |
+| ------ | -------------------- | :--------: | :---: |
+| **C1** | Qubit assignments    |     ✓      |   ✓   |
+| **C2** | Gate mappings        |     ✓      |   ✓   |
+| **C3** | Optimisation goal    |     ✓      |   -   |
+| **C4** | Random seed          |     ✓      |   -   |
+| **C5** | Compilation time     |     ✓      |   ✓   |
 
 In addition to the QProv compilation attributes, `q8s.runtime` toolkit collects **fine-grained compiler provenance**.
 
 For each transpiler pass, the following information can be recorded:
 
-| Compiler provenance | Description                                       | Qiskit | Qrisp |
-| ------------------- | ------------------------------------------------- | :----: | :---: |
-| **Pass index**      | Position of the pass in the transpilation process |   ✓    |   ✓   |
-| **Pass name**       | Transpiler pass name                              |   ✓    |   ✓   |
-| **Stage**           | Stage of the staged pass manager                  |   ✓    |   -   |
-| **Duration**        | Execution time of the pass                        |   ✓    |   ✓   |
-| **Circuit depth**   | Circuit depth after the pass                      |   ✓    |   ✓   |
-| **Circuit size**    | Circuit size after the pass                       |   ✓    |   ✓   |
+| Compiler provenance | Description                                       | Qiskit/UCC | Qrisp |
+| ------------------- | ------------------------------------------------- | :--------: | :---: |
+| **Pass index**      | Position of the pass in the transpilation process |     ✓      |   ✓   |
+| **Pass name**       | Transpiler pass name                              |     ✓      |   ✓   |
+| **Stage**           | Stage of the staged pass manager                  |     ✓      |   -   |
+| **Duration**        | Execution time of the pass                        |     ✓      |   ✓   |
+| **Circuit depth**   | Circuit depth after the pass                      |     ✓      |   ✓   |
+| **Circuit size**    | Circuit size after the pass                       |     ✓      |   ✓   |
 
 This extends QProv's compilation provenance with information about the internal compilation process and enables reconstruction and visualization of a **transpilation timeline**.
 

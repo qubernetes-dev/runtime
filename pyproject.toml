@@ -32,6 +32,7 @@ development = ["pre-commit", "pytest", "pytest-cov"]
 
 qiskit = ["qiskit", "qiskit-aer"]
 qrisp = ["qrisp"]
+ucc = ["ucc"]
 
 test = ["mqt.bench", "qiskit<2.2", "mlflow", "iqm-client[qiskit]"]
 [build-system]

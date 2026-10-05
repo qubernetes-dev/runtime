@@ -22,7 +22,7 @@ from mlflow import ActiveRun
 from mlflow.utils.autologging_utils import autologging_integration, safe_patch
 from qrisp import PassManager, QuantumCircuit
 
-from q8s.runtime.mlflow.qiskit.autologging import log_to_mlflow
+from q8s.runtime.mlflow.qiskit.utils import log_to_mlflow
 from q8s.runtime.qprov.record import (
     CompilationProvenance,
     QProvRecord,

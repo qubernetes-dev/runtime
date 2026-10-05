@@ -16,5 +16,6 @@
 """MLflow autologging integration for Qiskit."""
 
 from q8s.runtime.mlflow.qiskit.autologging import autolog
+from q8s.runtime.mlflow.qiskit.utils import create_autolog
 
-__all__ = ["autolog"]
+__all__ = ["autolog", "create_autolog"]
